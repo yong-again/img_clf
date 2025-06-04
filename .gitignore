@@ -105,8 +105,18 @@ data/
 input/
 saved/
 datasets/
+data/
 
 # editor, os cache directory
 .vscode/
 .idea/
 __MACOSX/
+
+# model weights
+weights/
+*.pt
+*.ckpt
+*.pth
+*.h5
+*.keras
+*.bat
