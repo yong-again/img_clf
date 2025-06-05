@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from base import BaseModel
+import sys
+sys.path.append('../')  # Adjust the path as necessary
+from base import BaseModel, ResNet
 
 
 class MnistModel(BaseModel):
@@ -20,3 +22,14 @@ class MnistModel(BaseModel):
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
+
+class ResNetclassifier(ResNet):
+    def forward(self, x):
+        return self.backbone(x)
+    
+# debugging
+if __name__ == '__main__':
+    import torch
+    model = ResNetclassifier(num_classes=391)
+    print(model)
+    print(model(torch.randn(1, 3, 224, 224)).shape)  # Example forward pass

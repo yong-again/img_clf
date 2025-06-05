@@ -4,6 +4,8 @@ import pandas as pd
 from pathlib import Path
 from itertools import repeat
 from collections import OrderedDict
+import torch
+from sklearn.utils.class_weight import compute_class_weight
 
 
 def ensure_dir(dirname):
@@ -65,3 +67,10 @@ class MetricTracker:
 
     def result(self):
         return dict(self._data.average)
+    
+def get_parent_path():
+    """
+    Get the path of the parent path script.
+    """
+    return Path(__file__).parent.parent.resolve()
+    
