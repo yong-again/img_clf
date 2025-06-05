@@ -2,8 +2,7 @@ import numpy as np
 import torch
 from torchvision.utils import make_grid
 from base import BaseTrainer
-from utils import inf_loop, MetricTracker
-
+from utils import inf_loop, MetricTracker, adapt_target_for_loss
 
 class Trainer(BaseTrainer):
     """
@@ -15,6 +14,7 @@ class Trainer(BaseTrainer):
         self.config = config
         self.device = device
         self.data_loader = data_loader
+        self.loss_weight = loss_weight
         if len_epoch is None:
             # epoch-based training
             self.len_epoch = len(self.data_loader)
@@ -43,8 +43,9 @@ class Trainer(BaseTrainer):
             data, target = data.to(self.device), target.to(self.device)
 
             self.optimizer.zero_grad()
-            output = self.model(data)
-            loss = self.criterion(output, target)
+            output = self.model(data) 
+            adapted_target = adapt_target_for_loss(output, target, self.criterion)
+            loss = self.criterion(output, adapted_target)      
             loss.backward()
             self.optimizer.step()
 

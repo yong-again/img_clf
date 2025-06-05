@@ -36,7 +36,21 @@ def main(config):
         model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # get function handles of loss and metrics
-    criterion = getattr(module_loss, config['loss'])
+    loss_config = config['loss']
+    loss_type = loss_config['type']
+    loss_args = loss_config.get('args', {})
+    use_weight = loss_args.get('use_weight', False)
+    loss_fn = getattr(module_loss, loss_type)
+    if loss_type == "CrossEntropy":
+        criteon = loss_fn(
+            num_classes=len(np.unique(data_loader.dataset.data_frame['label_index'])),
+            label_index_list=data_loader.dataset.data_frame['label_index'].values,
+            device=device,
+            use_weight=use_weight
+        )
+        
+    else:
+        criterion = getattr(module_loss, config['loss'])
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler

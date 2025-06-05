@@ -120,3 +120,6 @@ weights/
 *.h5
 *.keras
 *.bat
+
+# png
+diagram/

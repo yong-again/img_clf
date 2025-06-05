@@ -24,7 +24,13 @@
             "amsgrad": true
         }
     },
-    "loss": "nll_loss",
+    "loss": {
+        "type": "CrossEntropyLoss",
+        "args": {
+            "use_weight": true
+        }
+    },
+
     "metrics": [
         "accuracy", "top_k_acc"
     ],

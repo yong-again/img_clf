@@ -10,19 +10,6 @@ sys.path.append('../')  # Adjust the path as necessary
 from base import BaseDataLoader
 from utils.util import get_parent_path
 
-class MnistDataLoader(BaseDataLoader):
-    """
-    MNIST data loading demo using BaseDataLoader
-    """
-    def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, training=True):
-        trsfm = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])
-        self.data_dir = data_dir
-        self.dataset = datasets.MNIST(self.data_dir, train=training, download=True, transform=trsfm)
-        super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
-
 class CarImageDataset(Dataset):
     """
     Car Image Classification dataset
@@ -48,8 +35,8 @@ class CarImageDataset(Dataset):
         if self.transform:
             image = self.transform(image)
             
-        label_index = self.data_frame['label_index']
-        label_onehot = torch.eye(self.num_classes)[label_index]
+        label = self.data_frame.iloc[idx]['label_index']
+        label_onehot = torch.eye(self.num_classes)[label]
         
         return image, label_onehot
 
@@ -63,6 +50,7 @@ class CarImageDataLoader(BaseDataLoader):
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         ])
+        
         self.data_dir = data_dir
         self.dataset = CarImageDataset(data_dir=self.data_dir, csv_file=csv_file, transform=trsfm)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
