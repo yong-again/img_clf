@@ -1,23 +1,23 @@
 {
-    "name": "Mnist_LeNet",
+    "name": "Car Classification with ResNet50",
     "n_gpu": 1,
 
     "arch": {
-        "type": "MnistModel",
+        "type": "ResNetclassifier",
         "args": {}
     },
     "data_loader": {
-        "type": "MnistDataLoader",
+        "type": "CarImageDataLoader",
         "args":{
-            "data_dir": "data/",
-            "batch_size": 128,
+            "data_dir": "data/train/train_csv",
+            "batch_size": 32,
             "shuffle": true,
             "validation_split": 0.1,
-            "num_workers": 2
+            "num_workers": 8
         }
     },
     "optimizer": {
-        "type": "Adam",
+        "type": "AdamW",
         "args":{
             "lr": 0.001,
             "weight_decay": 0,

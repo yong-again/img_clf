@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from PIL import Image
 import sys
+import torch
 
 sys.path.append('../')  # Adjust the path as necessary
 from base import BaseDataLoader
@@ -31,6 +32,7 @@ class CarImageDataset(Dataset):
         self.csv_file = os.path.join(data_dir, 'train_csv', csv_file)
         self.transform = transform
         self.data_frame = pd.read_csv(self.csv_file)
+        self.num_classes = len(self.data_frame['label_index'].unique())
         
     def __len__(self):
         return len(self.data_frame)
@@ -45,8 +47,11 @@ class CarImageDataset(Dataset):
         
         if self.transform:
             image = self.transform(image)
+            
+        label_index = self.data_frame['label_index']
+        label_onehot = torch.eye(self.num_classes)[label_index]
         
-        return image, label
+        return image, label_onehot
 
 class CarImageDataLoader(BaseDataLoader):
     """
@@ -64,7 +69,11 @@ class CarImageDataLoader(BaseDataLoader):
 
 # debugging
 if __name__ == '__main__':
-    car_loader = CarImageDataLoader(data_dir='/Users/iyongjeong/WORK/dacon/img_clf/data', csv_file='train_mapped.csv', batch_size=32, training=True)
+    from utils.util import get_parent_path
+    parent_path = get_parent_path()
+    data_dir = get_parent_path() / "data"
+    car_loader = CarImageDataLoader(data_dir=data_dir, csv_file='train_mapped.csv', batch_size=32, training=True)
+    
     for images, labels in car_loader:
         print(images.shape, labels.shape)
         break  # Just to test the first batch
