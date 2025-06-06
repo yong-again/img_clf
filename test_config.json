@@ -1,5 +1,5 @@
 {
-    "name": "Car_Classification_with_ResNet50",
+    "name": "Car Classification with ResNet50",
     "n_gpu": 1,
 
     "arch": {
@@ -7,14 +7,14 @@
         "args": {}
     },
     "data_loader": {
-        "type": "CarImageDataLoader",
+        "type": "CarTestDataLoader",
         "args":{
             "data_dir": "data",
             "batch_size": 32,
             "shuffle": true,
             "validation_split": 0.2,
             "num_workers": 8,
-            "csv_file" : "train_mapped.csv",
+            "csv_file" : "test.csv",
             "return_onehot": true
         }
     },

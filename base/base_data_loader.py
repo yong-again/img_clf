@@ -54,8 +54,18 @@ class BaseDataLoader(DataLoader):
 
         return train_sampler, valid_sampler
 
-    def split_validation(self):
+    def split_validation(self, val_transform=None):
         if self.valid_sampler is None:
             return None
         else:
-            return DataLoader(sampler=self.valid_sampler, **self.init_kwargs)
+            valid_dataset = self.init_kwargs['dataset']
+            if val_transform is not None and hasattr(valid_dataset, 'clone_with_transform'):
+                valid_dataset = valid_dataset.clone_with_transform(val_transform)
+                
+        return DataLoader(
+            dataset=valid_dataset,
+            batch_size=self.init_kwargs['batch_size'],
+            sampler=self.valid_sampler,
+            num_workers=self.init_kwargs['num_workers'],
+            collate_fn=self.init_kwargs['collate_fn']
+        )

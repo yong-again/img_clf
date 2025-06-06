@@ -27,9 +27,9 @@ class ResNetclassifier(ResNet):
     def forward(self, x):
         return self.backbone(x)
     
-# debugging
-if __name__ == '__main__':
-    import torch
-    model = ResNetclassifier(num_classes=391)
-    print(model)
-    print(model(torch.randn(1, 3, 224, 224)).shape)  # Example forward pass
+# # debugging
+# if __name__ == '__main__':
+#     import torch
+#     model = ResNetclassifier(num_classes=391)
+#     print(model)
+#     print(model(torch.randn(1, 3, 224, 224)).shape)  # Example forward pass

@@ -9,7 +9,9 @@ import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
 from utils import prepare_device
-
+from data_loader.transform import valid_transform
+import warnings
+warnings.filterwarnings("ignore")
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -23,11 +25,11 @@ def main(config):
 
     # setup data_loader instances
     data_loader = config.init_obj('data_loader', module_data)
-    valid_data_loader = data_loader.split_validation()
+    valid_data_loader = data_loader.split_validation(val_transform=valid_transform())
 
     # build model architecture, then print to console
     model = config.init_obj('arch', module_arch)
-    logger.info(model)
+    #logger.info(model)
 
     # prepare for (multi-device) GPU training
     device, device_ids = prepare_device(config['n_gpu'])
@@ -42,7 +44,7 @@ def main(config):
     use_weight = loss_args.get('use_weight', False)
     loss_fn = getattr(module_loss, loss_type)
     if loss_type == "CrossEntropy":
-        criteon = loss_fn(
+        criterion = loss_fn(
             num_classes=len(np.unique(data_loader.dataset.data_frame['label_index'])),
             label_index_list=data_loader.dataset.data_frame['label_index'].values,
             device=device,

@@ -2,12 +2,9 @@ import torch
 
 
 def accuracy(output, target):
-    with torch.no_grad():
-        pred = torch.argmax(output, dim=1)
-        assert pred.shape[0] == len(target)
-        correct = 0
-        correct += torch.sum(pred == target).item()
-    return correct / len(target)
+    pred = torch.argmax(output, dim=1)  # 가장 높은 logit 값을 가진 클래스 인덱스
+    correct = torch.sum(pred == target).item()
+    return correct / target.size(0)
 
 
 def top_k_acc(output, target, k=3):
