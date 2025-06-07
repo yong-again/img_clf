@@ -5,8 +5,8 @@ from pathlib import Path
 from itertools import repeat
 from collections import OrderedDict
 import torch
-from sklearn.utils.class_weight import compute_class_weight
 import warnings
+from datetime import datetime
 
 
 def ensure_dir(dirname):
@@ -75,3 +75,36 @@ def get_parent_path():
     """
     return Path(__file__).parent.parent.resolve()
     
+def submission_check(train_data, submission_data, sample_submission_data=None):
+    idx_to_label = train_data.drop_duplicates(subset=['label_index']).set_index('label_index')['label'].to_dict()
+    submission_data['label'] = submission_data['label'].map(idx_to_label)
+    
+    submission_final = sample_submission_data.copy() if sample_submission_data is not None else submission_data.copy()
+    submission_final.iloc[:, 1:] = 0
+    
+    for i, row in submission_data.iterrows():
+        class_name = row['label']
+        if class_name in submission_final.columns:
+            submission_final.loc[submission_final['ID'], class_name] = 1
+    return submission_final
+
+def save_csv(data, file_name):
+    """
+    Save DataFrame to CSV file.
+    
+    :param data: DataFrame to save.
+    :param path: Path to save the CSV file.
+    """
+    if isinstance(data, pd.DataFrame):
+        base_dir = get_parent_path() / 'saved' / 'results'
+        make_datetime = datetime.now().strftime('%Y%m%d_%H%M%S')
+        save_path = Path(base_dir) / make_datetime / file_name
+        
+        if not save_path.parent.is_dir():
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            
+        data.to_csv(save_path, index=False, float_format="%.4f")
+        
+    else:
+        warnings.warn("Provided data is not a DataFrame. Saving as empty CSV.")
+        pd.DataFrame().to_csv(save_path, index=False, float_format="%.6f")

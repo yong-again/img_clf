@@ -24,12 +24,11 @@ class BaseModel(nn.Module):
         params = sum([np.prod(p.size()) for p in model_parameters])
         return super().__str__() + '\nTrainable parameters: {}'.format(params)
 
-
 class ResNet(nn.Module):
     """
     Base class for all models
     """
-    def __init__(self, num_classes=391):
+    def __init__(self, num_classes=396):
         super(ResNet, self).__init__()
         self.backbone = models.resnet50(pretrained=True)
         
