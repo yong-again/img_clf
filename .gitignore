@@ -123,3 +123,9 @@ weights/
 
 # png
 diagram/
+
+# bash
+*.sh
+
+# bash scripts
+bash/
