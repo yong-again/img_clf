@@ -1,21 +1,23 @@
 {
-    "name": "Car_Classification_with_ResNet50",
+    "name": "Car_Classification",
     "n_gpu": 1,
 
     "arch": {
-        "type": "ResNetclassifier",
-        "args": {}
+        "type": "SwinClassfier",
+        "args": {
+            "num_classes":396
+        }
     },
     "data_loader": {
         "type": "CarImageDataLoader",
         "args":{
             "data_dir": "data",
-            "batch_size": 64,
+            "batch_size": 32,
             "shuffle": true,
             "validation_split": 0.1,
-            "num_workers": 12,
-            "csv_file" : "train_mapped.csv",
-            "return_onehot": true
+            "num_workers": 8,
+            "csv_file" : "train_mapped_2.csv",
+            "return_onehot": false
         }
     },
     "optimizer": {
@@ -27,9 +29,8 @@
         }
     },
     "loss": {
-        "type": "CrossEntropy",
+        "type": "LabelSmoothingLoss",
         "args": {
-            "use_weight": true
         }
     },
 

@@ -3,6 +3,8 @@ import torch
 from torchvision.utils import make_grid
 from base import BaseTrainer
 from utils import inf_loop, MetricTracker, adapt_target_for_loss
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='torchvision.transforms.functional', message='The use of `transforms.functional.to_pil_image` is deprecated in favor of `transforms.functional.to_pil_image`')
 
 class Trainer(BaseTrainer):
     """
@@ -44,15 +46,17 @@ class Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data) 
-            adapted_target = adapt_target_for_loss(output, target, self.criterion)
-            loss = self.criterion(output, adapted_target)      
+            print("output shape:", output.shape)
+            print("target shape:", target.shape)
+            # adapted_target = adapt_target_for_loss(output, target, self.criterion)
+            loss = self.criterion(output, target)      
             loss.backward()
             self.optimizer.step()
             
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(output, adapted_target))
+                self.train_metrics.update(met.__name__, met(output, target))
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f}'.format(

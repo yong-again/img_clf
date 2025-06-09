@@ -11,6 +11,14 @@ sys.path.append('../')
 from utils.util import get_parent_path
 
 
+def cv2_imread_unicode(path):
+    try:
+        stream = np.fromfile(path, dtype=np.uint8)
+        image = cv2.imdecode(stream, cv2.IMREAD_COLOR)
+        return image
+    except Exception:
+        return None
+
 def check_image_validity(image_path):
     try:
         img = Image.open(image_path)
@@ -21,7 +29,7 @@ def check_image_validity(image_path):
 
 
 def get_image_stats(image_path):
-    image = cv2.imread(str(image_path))
+    image = cv2_imread_unicode(str(image_path))
     if image is None:
         return None
 
@@ -34,6 +42,7 @@ def get_image_stats(image_path):
     # Resolution
     height, width = gray.shape
     resolution = f"{width}x{height}"
+    
 
     # Aspect ratio
     aspect_ratio = round(width / height, 3)
@@ -41,7 +50,7 @@ def get_image_stats(image_path):
     # Blur score (variance of Laplacian)
     blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
 
-    return mean_brightness, exposure, resolution, aspect_ratio, blur_score
+    return mean_brightness, exposure, height, width, aspect_ratio, blur_score
 
 
 def process_single_folder(folder_path):
@@ -56,12 +65,13 @@ def process_single_folder(folder_path):
                 valid_images.append(file)
                 stats = get_image_stats(file)
                 if stats is not None:
-                    mean_brightness, exposure, resolution, aspect_ratio, blur_score = stats
+                    mean_brightness, exposure, height, width, aspect_ratio, blur_score = stats
                     stats_data.append((
                         file.name,
                         mean_brightness,
                         exposure,
-                        resolution,
+                        height,
+                        width,
                         aspect_ratio,
                         blur_score
                     ))
@@ -93,7 +103,7 @@ if __name__ == '__main__':
         print(f"Image directory {image_dir} does not exist.")
         exit(1)
 
-    valid_images, invalid_images, stats_data = process_images_in_directory_parallel(image_dir, num_workers=8)
+    valid_images, invalid_images, stats_data = process_images_in_directory_parallel(image_dir, num_workers=4)
 
     print(f"Valid images: {len(valid_images)}")
     print(f"Invalid images: {len(invalid_images)}")
@@ -102,7 +112,8 @@ if __name__ == '__main__':
         'image_name',
         'mean_brightness',
         'exposure',
-        'resolution',
+        'height',
+        'width',
         'aspect_ratio',
         'blur_score'
     ])

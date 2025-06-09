@@ -129,3 +129,5 @@ diagram/
 
 # bash scripts
 bash/
+
+*.csv

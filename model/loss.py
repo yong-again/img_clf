@@ -19,3 +19,11 @@ def CrossEntropy(num_classes=None, label_index_list=None, device='cpu', use_weig
         return nn.CrossEntropyLoss(weight=weights)
     else:
         return nn.CrossEntropyLoss()
+    
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, smoothing=0.1):
+        super().__init__()
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=smoothing)
+
+    def forward(self, input, target):
+        return self.criterion(input, target)

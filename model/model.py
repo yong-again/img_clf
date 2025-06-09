@@ -1,9 +1,11 @@
 import torch.nn as nn
 import torch.nn.functional as F
-import sys
-sys.path.append('../')  # Adjust the path as necessary
+from timm import create_model
 from base import BaseModel, ResNet
-
+import warnings 
+warnings.filterwarnings("ignore")
+import torchvision
+torchvision.disable_beta_transforms_warning()
 
 class MnistModel(BaseModel):
     def __init__(self, num_classes=10):
@@ -26,6 +28,20 @@ class MnistModel(BaseModel):
 class ResNetclassifier(ResNet):
     def forward(self, x):
         return self.backbone(x)
+
+
+class SwinClassfier(nn.Module):
+    def __init__(self, num_classes=396):
+        super().__init__()
+        self.backbone = create_model('swin_base_patch4_window7_224', 
+                                     pretrained=True, 
+                                     num_classes=num_classes, 
+                                     global_pool='avg')
+        
+    def forward(self, x):
+        x = self.backbone(x)
+        return x
+
     
 # # debugging
 # if __name__ == '__main__':

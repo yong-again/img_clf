@@ -29,7 +29,7 @@ def main(config):
 
     # build model architecture, then print to console
     model = config.init_obj('arch', module_arch)
-    #logger.info(model)
+    logger.info(model)
 
     # prepare for (multi-device) GPU training
     device, device_ids = prepare_device(config['n_gpu'])
@@ -52,7 +52,7 @@ def main(config):
         )
         
     else:
-        criterion = getattr(module_loss, config['loss'])
+        criterion = config.init_obj('loss', module_loss)
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
