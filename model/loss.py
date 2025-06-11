@@ -19,7 +19,7 @@ def CrossEntropy(num_classes=None, label_index_list=None, device='cpu', use_weig
         return nn.CrossEntropyLoss(weight=weights)
     else:
         return nn.CrossEntropyLoss()
-    
+
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, smoothing=0.1):
         super().__init__()

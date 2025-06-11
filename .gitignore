@@ -130,4 +130,9 @@ diagram/
 # bash scripts
 bash/
 
+# text files
 *.csv
+
+# zip files
+*.zip
+*.tar

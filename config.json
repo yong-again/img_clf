@@ -3,13 +3,12 @@
     "n_gpu": 1,
 
     "arch": {
-        "type": "SwinClassfier",
+        "type": "ResNetclassifier",
         "args": {
-            "num_classes":396
         }
     },
     "data_loader": {
-        "type": "CarImageDataLoader",
+        "type": "CarAugImageDataLoader",
         "args":{
             "data_dir": "data",
             "batch_size": 32,
@@ -29,8 +28,9 @@
         }
     },
     "loss": {
-        "type": "LabelSmoothingLoss",
+        "type": "CrossEntropy",
         "args": {
+            "use_weight" : true
         }
     },
 
