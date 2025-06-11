@@ -21,3 +21,4 @@ def f1_score(output, target):
     pred = torch.argmax(output, dim=1).cpu().numpy()
     target = target.cpu().numpy()
     return f1_score(target, pred, average='macro')
+
