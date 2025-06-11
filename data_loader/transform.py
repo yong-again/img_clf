@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from torchvision.transforms.v2 import AugMix
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module='torchvision.transforms.functional', message='The use of `transforms.functional.to_pil_image` is deprecated in favor of `transforms.functional.to_pil_image`')
+warnings.filterwarnings("ignore")
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 

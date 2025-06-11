@@ -46,17 +46,15 @@ class Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data) 
-            print("output shape:", output.shape)
-            print("target shape:", target.shape)
-            # adapted_target = adapt_target_for_loss(output, target, self.criterion)
-            loss = self.criterion(output, target)      
+            adapted_target = adapt_target_for_loss(output, target, self.criterion)
+            loss = self.criterion(output, adapted_target)      
             loss.backward()
             self.optimizer.step()
             
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(output, target))
+                self.train_metrics.update(met.__name__, met(output, adapted_target))
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f}'.format(
