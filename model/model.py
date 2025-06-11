@@ -51,3 +51,14 @@ class ConvNextClassifier(nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         return x
+    
+class VitClassifier(nn.Module):
+    def __init__(self, num_classes=396):
+        super().__init__()
+        self.backbone = create_model('vit_base_patch16_224', 
+                                     pretrained=True, 
+                                     num_classes=num_classes)
+        
+    def forward(self, x):
+        x = self.backbone(x)
+        return x
