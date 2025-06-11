@@ -4,8 +4,7 @@ from timm import create_model
 from base import BaseModel, ResNet
 import warnings 
 warnings.filterwarnings("ignore")
-import torchvision
-torchvision.disable_beta_transforms_warning()
+
 
 class MnistModel(BaseModel):
     def __init__(self, num_classes=10):
@@ -41,11 +40,14 @@ class SwinClassfier(nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         return x
-
     
-# # debugging
-# if __name__ == '__main__':
-#     import torch
-#     model = ResNetclassifier(num_classes=391)
-#     print(model)
-#     print(model(torch.randn(1, 3, 224, 224)).shape)  # Example forward pass
+class ConvNextClassifier(nn.Module):
+    def __init__(self, num_classes=396):
+        super().__init__()
+        self.backbone = create_model('convnext_base', 
+                                     pretrained=True, 
+                                     num_classes=num_classes)
+        
+    def forward(self, x):
+        x = self.backbone(x)
+        return x
