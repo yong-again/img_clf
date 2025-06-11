@@ -15,3 +15,10 @@ def top_k_acc(output, target, k=3):
         for i in range(k):
             correct += torch.sum(pred[:, i] == target).item()
     return correct / len(target)
+
+def f1_score(output, target):
+    from sklearn.metrics import f1_score
+    pred = torch.argmax(output, dim=1).cpu().numpy()
+    target = target.cpu().numpy()
+    return f1_score(target, pred, average='macro')
+

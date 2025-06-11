@@ -41,9 +41,9 @@ class CarImageDataset(Dataset):
     def __getitem__(self, idx):
         try:
             row = self.data_frame.iloc[idx]
-            img_path = os.path.basename(row['image_path'])
+            image_name = row['image_name']
             folder_name = row['folder_name']
-            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{img_path}"
+            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{image_name}"
             image = Image.open(img_full_path).convert('RGB')
             image = np.array(image)
             
@@ -99,9 +99,9 @@ class CarAugImageDataset(Dataset):
     def __getitem__(self, idx):
         try:
             row = self.data_frame.iloc[idx]
-            img_path = os.path.basename(row['image_path'])
+            image_name = row['image_name']
             folder_name = row['folder_name']
-            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{img_path}"
+            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{image_name}"
             image = Image.open(img_full_path).convert('RGB')
             image = np.array(image)
             
