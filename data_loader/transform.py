@@ -3,7 +3,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import numpy as np
 from PIL import Image
-from torchvision.transforms.v2 import AugMix
+from torchvision.transforms.v2 import AugMix, CutMix
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -83,9 +83,43 @@ def valid_transform_albu():
     ])
     
 class AlbumentationsWithAugMix:
-    def __init__(self):
-        self.augmix = AugMix()
-        self.albumentations_transform = A.Compose([
+    def __init__(
+        self,
+        base_transform: A.Compose,
+        normalize_transform: A.Compose,
+        severity: int = 3,
+        mixture_width: int = 3,
+        alpha: float = 1.0
+    ):
+        # base_transform: Resize, RandomResizedCrop, Flip, etc (np.ndarray → np.ndarray)
+        # normalize_transform: Normalize + ToTensorV2 (np.ndarray → Tensor)
+        self.base_transform = base_transform
+        self.normalize_transform = normalize_transform
+        self.severity = severity
+        self.mixture_width = mixture_width
+        self.alpha = alpha
+
+    def __call__(self, image: np.ndarray):
+        orig = image.copy()
+        orig_t = self.base_transform(image=orig)['image'].astype(np.float32)
+
+        # Dirichlet (벡터) → numpy array
+        ws = np.random.dirichlet([self.alpha] * self.mixture_width).astype(np.float32)
+        # Beta (스칼라) → float or np.float32
+        m  = np.float32(np.random.beta(self.alpha, self.alpha))
+
+        mix = np.zeros_like(orig_t, dtype=np.float32)
+        for i in range(self.mixture_width):
+            aug = image.copy()
+            aug_t = self.base_transform(image=aug)['image'].astype(np.float32)
+            mix += ws[i] * aug_t
+
+        mixed = (1 - m) * orig_t + m * mix
+        mixed = np.clip(mixed, 0, 255).astype(np.uint8)
+        return self.normalize_transform(image=mixed)
+        
+def train_transform_augmix():
+    base_transform = A.Compose([
         A.Resize(256, 256),  # 원본 비율 보존 및 일관된 입력 크기
         A.RandomResizedCrop((224, 224), scale=(0.8, 1.0), p=1.0),
 
@@ -120,27 +154,21 @@ class AlbumentationsWithAugMix:
 
         # Random Erasing 유사 효과
         A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.5),
-
-        # Normalize 및 tensor 변환
-        A.Normalize(mean=(0.485, 0.456, 0.406),
-                    std=(0.229, 0.224, 0.225)),
-        ToTensorV2()
-    ])
-
-    def __call__(self, image):
-        # Apply AugMix first (on PIL Image)
-        image = self.augmix(image)
-
-        # Convert PIL → np.array for Albumentations
-        image_np = np.array(image)
         
-        # Apply Albumentations
-        transformed = self.albumentations_transform(image=image_np)
-        return transformed["image"]
+        ])
     
-if __name__ == '__main__':
-    # Example usage
-    img = Image.open(r'C:\works\dacon\img_clf\data\train\프리우스_C_2018_2020\프리우스_C_2018_2020_0000.jpg')
-    transform = AlbumentationsWithAugMix()
-    transformed_img = transform(img)
-    print(transformed_img.shape)  # Should print the shape of the transformed tensor
+    normalize_transform = A.Compose([
+            A.Normalize(mean=(0.485, 0.456, 0.406),
+                        std=(0.229, 0.224, 0.225)),
+            ToTensorV2()
+            ])
+        
+    return AlbumentationsWithAugMix(base_transform, normalize_transform)
+            
+            
+# if __name__ == '__main__':
+#     # Example usage
+#     img = Image.open(r'/workspace/img_clf/data/train/2시리즈_액티브_투어러_F45_2019_2021/2시리즈_액티브_투어러_F45_2019_2021_0000.jpg')
+#     transform = AlbumentationWithCutMix()
+#     transformed_img = transform(img)
+#     print(transformed_img.shape)  # Should print the shape of the transformed tensor
