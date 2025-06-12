@@ -3,18 +3,19 @@
     "n_gpu": 1,
 
     "arch": {
-        "type": "VitClassifier",
+        "type": "ConvNextClassifier",
         "args": {
+
         }
     },
     "data_loader": {
-        "type": "CarAugImageDataLoader",
+        "type": "CarAugMixmageDataLoader",
         "args":{
             "data_dir": "data",
-            "batch_size": 128,
+            "batch_size": 64,
             "shuffle": true,
             "validation_split": 0.1,
-            "num_workers": 8,
+            "num_workers": 12,
             "csv_file" : "train_mapped_2.csv",
             "return_onehot": false
         }
@@ -37,7 +38,7 @@
     },
 
     "metrics": [
-        "accuracy", "top_k_acc"
+        "accuracy", "top_k_acc", "f1_score"
     ],
     "lr_scheduler": {
         "type": "CosineAnnealingLR",

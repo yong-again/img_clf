@@ -4,11 +4,11 @@ import os
 from PIL import Image
 import torch
 import sys
-sys.path.append('../')
+import numpy as np
+#sys.path.append('../')
 from base import BaseDataLoader
 from utils.util import get_parent_path
-from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, AlbumentationsWithAugMix
-import numpy as np
+from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, train_transform_augmix
 
 import logging
 
@@ -48,8 +48,7 @@ class CarImageDataset(Dataset):
             image = np.array(image)
             
             if self.transform:
-                transformed = self.transform(image=image)
-                image = transformed['image']
+                transformed_image = self.transform(image=image)
                 
             label = row['label_index']
             if self.return_onehot:
@@ -57,7 +56,7 @@ class CarImageDataset(Dataset):
             else:    
                 label = torch.tensor(label, dtype=torch.long)
             
-            return image, label
+            return transformed_image, label
         
         except Exception as e:
             logging.error(f"{img_full_path} | idx={idx} | error={str(e)}")
@@ -79,7 +78,6 @@ class CarImageDataLoader(BaseDataLoader):
         self.data_dir = data_dir
         self.dataset = CarImageDataset(data_dir=self.data_dir, csv_file=csv_file, return_onehot=return_onehot, transform=trsfm)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
-        
         
 class CarAugImageDataset(Dataset):
     """
@@ -182,6 +180,72 @@ class CarTestDataLoader(BaseDataLoader):
         trsfm = valid_transform_albu()
         self.data_dir = data_dir
         self.dataset = CarTestDataSet(data_dir=self.data_dir, csv_file=csv_file, transform=trsfm)
+        super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+        
+class CarAugMixImageDataset(Dataset):
+    """
+    Car Image Classification dataset
+    """
+    def __init__(self, data_dir, csv_file, return_onehot=False, transform=None):
+        self.data_dir = data_dir
+        self.csv_file = os.path.join(get_parent_path(), data_dir, 'train_csv', csv_file)
+        self.return_onehot = return_onehot
+        self.transform = transform
+        self.data_frame = pd.read_csv(self.csv_file)
+        self.num_classes = len(self.data_frame['label_index'].unique())
+        
+    def __len__(self):
+        return len(self.data_frame)
+    
+    def __getitem__(self, idx):
+        try:
+            row = self.data_frame.iloc[idx]
+            image_name = row['image_name']
+            folder_name = row['folder_name']
+            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{image_name}"
+            image = Image.open(img_full_path).convert('RGB')
+            image = np.array(image)
+            
+            if self.transform:
+                transformed = self.transform(image=image)
+                image = transformed['image']
+                
+            
+            label = int(row['label_index'])
+            
+            if self.return_onehot:
+                label = torch.eye(self.num_classes)[label]
+                print(f"One-hot encoded label shape: {label.shape}")
+            else:    
+                label = torch.tensor(label, dtype=torch.long)
+                # print(f"Label shape: {label.shape}")
+                # print(f"Label value: {label.item()}")
+                
+                
+            if label is None:
+                raise ValueError(f"Label is None for idx={idx} in {img_full_path}")
+
+            return image, label
+        
+        except Exception as e:
+            logging.error(f"{img_full_path} | idx={idx} | error={str(e)}")
+            return None
+        
+    def clone_with_transform(self, transform):
+        return CarAugImageDataset(
+            data_dir=self.data_dir,
+            csv_file=self.csv_file,
+            transform=transform,
+        )
+
+class CarAugMixmageDataLoader(BaseDataLoader):
+    """
+    Car Image Classfication dataset
+    """
+    def __init__(self, data_dir, csv_file, batch_size, shuffle=True, validation_split=0.0, num_workers=2, return_onehot=False):
+        trsfm = train_transform_augmix()
+        self.data_dir = data_dir
+        self.dataset = CarAugMixImageDataset(data_dir=self.data_dir, csv_file=csv_file, return_onehot=return_onehot, transform=trsfm)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
 # debugging
