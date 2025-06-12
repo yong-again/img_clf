@@ -7,7 +7,7 @@ import sys
 sys.path.append('../')
 from base import BaseDataLoader
 from utils.util import get_parent_path
-from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, AlbumentationsWithAugMix
+from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, AlbumentationsWithAugMix, AlbumentationWithCutMix
 import numpy as np
 
 import logging
@@ -48,8 +48,7 @@ class CarImageDataset(Dataset):
             image = np.array(image)
             
             if self.transform:
-                transformed = self.transform(image=image)
-                image = transformed['image']
+                transformed_image = self.transform(image=image)
                 
             label = row['label_index']
             if self.return_onehot:
@@ -57,7 +56,7 @@ class CarImageDataset(Dataset):
             else:    
                 label = torch.tensor(label, dtype=torch.long)
             
-            return image, label
+            return transformed_image, label
         
         except Exception as e:
             logging.error(f"{img_full_path} | idx={idx} | error={str(e)}")
@@ -79,7 +78,6 @@ class CarImageDataLoader(BaseDataLoader):
         self.data_dir = data_dir
         self.dataset = CarImageDataset(data_dir=self.data_dir, csv_file=csv_file, return_onehot=return_onehot, transform=trsfm)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
-        
         
 class CarAugImageDataset(Dataset):
     """
