@@ -9,7 +9,7 @@
         }
     },
     "data_loader": {
-        "type": "CarAugImageDataLoader",
+        "type": "CarAugMixImageDataLoader",
         "args":{
             "data_dir": "data",
             "batch_size": 64,
