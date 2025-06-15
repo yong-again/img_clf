@@ -4,7 +4,7 @@ from torchvision.utils import make_grid
 from base import BaseTrainer
 from utils import inf_loop, MetricTracker, adapt_target_for_loss
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module='torchvision.transforms.functional', message='The use of `transforms.functional.to_pil_image` is deprecated in favor of `transforms.functional.to_pil_image`')
+warnings.filterwarnings("ignore")
 
 class Trainer(BaseTrainer):
     """
@@ -42,19 +42,34 @@ class Trainer(BaseTrainer):
         self.model.train()
         self.train_metrics.reset()
         for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.to(self.device), target.to(self.device)
+            data = data.to(self.device)
+            
+            if isinstance(target, tuple):
+                target = tuple(t.to(self.device) if isinstance(t, torch.Tensor) else t for t in target)
+            else:
+                target = target.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(data) 
-            adapted_target = adapt_target_for_loss(output, target, self.criterion)
-            loss = self.criterion(output, adapted_target)      
+            if isinstance(target, tuple):
+                target_a, target_b, lam = target
+                adapted_target_a = adapt_target_for_loss(output, target_a, self.criterion)
+                adapted_target_b = adapt_target_for_loss(output, target_b, self.criterion)
+                loss = lam * self.criterion(output, adapted_target_a) + (1 - lam) * self.criterion(output, adapted_target_b)
+            else:
+                adapted_target = adapt_target_for_loss(output, target, self.criterion)
+                loss = self.criterion(output, adapted_target)
             loss.backward()
             self.optimizer.step()
             
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(output, adapted_target))
+                if isinstance(target, tuple):
+                    score = lam * met(output, adapted_target_a) + (1 - lam) * met(output, adapted_target_b)
+                else:
+                    score = met(output, adapted_target)
+                self.train_metrics.update(met.__name__, score)
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f}'.format(

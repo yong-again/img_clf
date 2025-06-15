@@ -1,10 +1,18 @@
 {
-    "name": "Car Classification with ResNet50",
+    "name": "custom_convnext_augmix",
     "n_gpu": 1,
 
     "arch": {
-        "type": "ConvNextClassifier",
-        "args": {}
+        "type": "CustomConvNextClassifier",
+        "args": {
+            "head_layers": [ 
+                {"type": "LayerNorm", "args": {"normalized_shape": 1024}},
+                {"type": "Linear", "args": {"in_features": 1024, "out_features": 512}},
+                {"type": "GELU"},
+                {"type": "Dropout", "args": {"p": 0.3}},
+                {"type": "Linear", "args": {"in_features": 512, "out_features": 396}}
+            ]
+    }
     },
     "data_loader": {
         "type": "CarTestDataLoader",

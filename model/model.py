@@ -62,3 +62,54 @@ class VitClassifier(nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         return x
+    
+class CustomConvNextClassifier(nn.Module):
+    def __init__(self, num_classes=396, **kwargs):
+        super().__init__()
+        
+        # 1. 백본 네트워크 초기화 (기본 분류기 제거)
+        self.backbone = create_model(
+            'convnext_base', 
+            pretrained=True, 
+            num_classes=0  # 분류 헤드 비활성화
+        )
+        
+        # 2. 동적 헤드 레이어 구성
+        in_features = 1024  # convnext_base 기본 출력 차원
+        self.head = self._build_head_layers(
+            kwargs.get('head_layers', []), 
+            in_features, 
+            num_classes
+        )
+
+    def _build_head_layers(self, layer_configs, in_features, num_classes):
+        layers = []
+        current_dim = in_features
+        
+        for config in layer_configs:
+            layer_type = config["type"]
+            args = config.get("args", {})
+            
+            if layer_type == "LayerNorm":
+                layers.append(nn.LayerNorm(**args))
+            elif layer_type == "Linear":
+                args["in_features"] = current_dim
+                layers.append(nn.Linear(**args))
+                current_dim = args["out_features"]
+            elif layer_type == "GELU":
+                layers.append(nn.GELU())
+            elif layer_type == "Dropout":
+                layers.append(nn.Dropout(**args))
+            else:
+                raise ValueError(f"Unsupported layer type: {layer_type}")
+        
+        # 최종 분류기 추가
+        if current_dim != num_classes:
+            layers.append(nn.Linear(current_dim, num_classes))
+            
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        # 3. 특징 추출 → 커스텀 헤드 통과
+        features = self.backbone(x)
+        return self.head(features)

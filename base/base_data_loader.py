@@ -67,5 +67,5 @@ class BaseDataLoader(DataLoader):
             batch_size=self.init_kwargs['batch_size'],
             sampler=self.valid_sampler,
             num_workers=self.init_kwargs['num_workers'],
-            collate_fn=self.init_kwargs['collate_fn']
+            collate_fn=default_collate
         )

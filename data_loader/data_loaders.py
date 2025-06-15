@@ -8,7 +8,7 @@ import numpy as np
 #sys.path.append('../')
 from base import BaseDataLoader
 from utils.util import get_parent_path
-from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, train_transform_augmix
+from data_loader.transform import train_transform, valid_transform, train_transform_albu, valid_transform_albu, train_transform_augmix, cutmix_collate_fn
 
 import logging
 
@@ -66,7 +66,7 @@ class CarImageDataset(Dataset):
         return CarImageDataset(
             data_dir=self.data_dir,
             csv_file=self.csv_file,
-            transform=transform,
+            transform=valid_transform,
         )
 
 class CarImageDataLoader(BaseDataLoader):
@@ -221,7 +221,6 @@ class CarAugMixImageDataset(Dataset):
                 # print(f"Label shape: {label.shape}")
                 # print(f"Label value: {label.item()}")
                 
-                
             if label is None:
                 raise ValueError(f"Label is None for idx={idx} in {img_full_path}")
 
@@ -247,7 +246,105 @@ class CarAugMixmageDataLoader(BaseDataLoader):
         self.data_dir = data_dir
         self.dataset = CarAugMixImageDataset(data_dir=self.data_dir, csv_file=csv_file, return_onehot=return_onehot, transform=trsfm)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+        
+        
+# Augmix + CutMix Dataloader
+class CarAugCutImageDataset(Dataset):
+    def __init__(self, data_dir, csv_file, return_onehot=False, transform=None):
+        self.data_dir = data_dir
+        self.csv_path = os.path.join(data_dir, 'train_csv', csv_file)
+        self.return_onehot = return_onehot
+        self.transform = transform
+        self.data_frame = pd.read_csv(self.csv_path)
+        self.num_classes = self.data_frame['label_index'].nunique()
 
+    def __len__(self):
+        return len(self.data_frame)
+
+    def __getitem__(self, idx):
+        try:
+            row = self.data_frame.iloc[idx]
+            folder, image_name = row['folder_name'], row['image_name']
+            img_path = os.path.join(self.data_dir, 'train', folder, image_name)
+
+            image = Image.open(img_path).convert('RGB')
+            image = np.array(image).astype(np.uint8)
+
+            if self.transform:
+                image = self.transform(image=image)['image']
+
+            label = int(row['label_index'])
+            if self.return_onehot:
+                label = torch.eye(self.num_classes)[label]
+            else:
+                label = torch.tensor(label, dtype=torch.long)
+
+            return image, label
+        except Exception as e:
+            logging.error(f"Error at {idx}: {e}")
+            return None
+        
+    def clone_with_transform(self, transform):
+        return CarAugCutImageDataset(
+            data_dir=self.data_dir,
+            csv_file=os.path.basename(self.csv_path),
+            transform=transform,
+        )
+        
+class CarAugCutImageDataLoader(BaseDataLoader):
+    def __init__(self, data_dir, csv_file, batch_size, shuffle=True, validation_split=0.0, num_workers=4, return_onehot=False):
+        transform = train_transform_augmix()
+        dataset = CarAugCutImageDataset(data_dir, csv_file, return_onehot, transform)
+        collate_fn = lambda batch: cutmix_collate_fn(batch, dataset.num_classes)
+        super().__init__(dataset, batch_size, shuffle, validation_split, num_workers, collate_fn)
+
+
+class OnlyCutMixDataset(Dataset):
+    def __init__(self, data_dir, csv_file, return_onehot=False, transform=None):
+        self.data_dir = data_dir
+        self.csv_file = os.path.join(get_parent_path(), data_dir, 'train_csv', csv_file)
+        self.return_onehot = return_onehot
+        self.transform = transform
+        self.data_frame = pd.read_csv(self.csv_file)
+        self.num_classes = self.data_frame['label_index'].nunique()
+
+    def __len__(self):
+        return len(self.data_frame)
+
+    def __getitem__(self, idx):
+        try:
+            row = self.data_frame.iloc[idx]
+            image_name = row['image_name']
+            folder_name = row['folder_name']
+            img_full_path = f"{get_parent_path()}/{self.data_dir}/train/{folder_name}/{image_name}"
+            image = Image.open(img_full_path).convert('RGB')
+            image = np.array(image).astype(np.uint8)
+            if self.transform:
+                image = self.transform(image=image)['image']
+            label = int(row['label_index'])
+            if self.return_onehot:
+                label = torch.eye(self.num_classes)[label]
+            else:
+                label = torch.tensor(label, dtype=torch.long)
+            return image, label
+        except Exception as e:
+            raise RuntimeError(f"{img_full_path} | idx={idx} | error={str(e)}")
+
+    def clone_with_transform(self, transform):
+        return CarAugMixImageDataset(
+            data_dir=self.data_dir,
+            csv_file=os.path.basename(self.csv_file),
+            return_onehot=self.return_onehot,
+            transform=transform,
+        )
+
+class OnlyCutMixDataLoader(BaseDataLoader):
+    def __init__(self, data_dir, csv_file, batch_size, shuffle=True, validation_split=0.0, num_workers=4, return_onehot=False):
+        transform = train_transform_albu()
+        dataset = OnlyCutMixDataset(data_dir, csv_file, return_onehot, transform)
+        collate_fn = lambda batch: cutmix_collate_fn(batch, dataset.num_classes)
+        super().__init__(dataset, batch_size, shuffle, validation_split, num_workers, collate_fn)
+    
 # debugging
 if __name__ == '__main__':
     from utils.util import get_parent_path

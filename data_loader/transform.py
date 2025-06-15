@@ -4,9 +4,12 @@ from albumentations.pytorch import ToTensorV2
 import numpy as np
 from PIL import Image
 from torchvision.transforms.v2 import AugMix, CutMix
+import torch
 import warnings
 warnings.filterwarnings("ignore")
 
+
+# ----------------------- Transformations for Image Classification -----------------------
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 def train_transform():
@@ -31,6 +34,7 @@ def valid_transform():
                     normalize,
                 ])
 
+# ----------------------- Transformations for Image Classification with Albumentations -----------------------
 def train_transform_albu():
     return A.Compose([
         A.Resize(256, 256),  # 원본 비율 보존 및 일관된 입력 크기
@@ -82,63 +86,12 @@ def valid_transform_albu():
         ToTensorV2()
     ])
     
+# ----------------------- Transformations for Image Classification with Albumentations and AugMix -----------------------
+ 
 class AlbumentationsWithAugMix:
-    def __init__(self):
-        self.augmix = AugMix()
-        self.albumentations_transform = A.Compose([
-        A.Resize(256, 256),  # 원본 비율 보존 및 일관된 입력 크기
-        A.RandomResizedCrop((224, 224), scale=(0.8, 1.0), p=1.0),
-
-        # 기본 변형
-        A.HorizontalFlip(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=5, p=0.5),
-        A.Perspective(scale=(0.05, 0.1), p=0.3),
-
-        # 컬러 관련 변형
-        A.RandomBrightnessContrast(p=0.5),
-        A.HueSaturationValue(p=0.5),
-
-        # 날씨 및 환경 효과
-        A.OneOf([
-            A.RandomFog(fog_coef_lower=0.1, fog_coef_upper=0.3, alpha_coef=0.1),
-            A.RandomShadow(shadow_roi=(0, 0.5, 1, 1), num_shadows_lower=1, num_shadows_upper=2),
-            A.RandomRain(p=1.0),
-        ], p=0.2),
-
-        # 노이즈 계열
-        A.OneOf([
-            A.MotionBlur(blur_limit=7),
-            A.GaussianBlur(blur_limit=(3, 5)),
-            A.MedianBlur(blur_limit=5),
-        ], p=0.3),
-
-        # JPEG 압축 노이즈
-        A.ImageCompression(quality_lower=30, quality_upper=70, p=0.2),
-
-        # 조도 및 명암 대비 향상
-        A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), p=0.2),
-
-        # Random Erasing 유사 효과
-        A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.5),
-
-        # Normalize 및 tensor 변환
-        A.Normalize(mean=(0.485, 0.456, 0.406),
-                    std=(0.229, 0.224, 0.225)),
-        ToTensorV2()
-    ])
-
-    def __call__(self, image):
-        # Apply AugMix first (on PIL Image)
-        image = self.augmix(image)
-
-        # Convert PIL → np.array for Albumentations
-        image_np = np.array(image)
-        
-        # Apply Albumentations
-        transformed = self.albumentations_transform(image=image_np)
-        return transformed["image"]
-    
-class AlbumentationsWithAugMix:
+    """
+    warraper for Albumentations with AugMix.
+    """
     def __init__(
         self,
         base_transform: A.Compose,
@@ -177,7 +130,6 @@ class AlbumentationsWithAugMix:
 
 
 def train_transform_augmix():
-    # 1) AugMix에서 사용할 base transform: 순수 augmentation만
     base_transform = A.Compose([
         A.Resize(256, 256),
         A.RandomResizedCrop((224, 224), scale=(0.8, 1.0), p=1.0),
@@ -201,13 +153,42 @@ def train_transform_augmix():
         A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.5),
     ])
 
-    # 2) Normalize + ToTensorV2 (마지막에 한 번만)
     normalize_transform = A.Compose([
         A.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225)),
         ToTensorV2()
     ])
 
     return AlbumentationsWithAugMix(base_transform, normalize_transform)
+
+# -------------------- CutMix Collate --------------------
+def rand_bbox(size, lam):
+    W, H = size[2], size[3]
+    cut_rat = np.sqrt(1. - lam)
+    cut_w, cut_h = int(W * cut_rat), int(H * cut_rat)
+    cx, cy = np.random.randint(W), np.random.randint(H)
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+    return bbx1, bby1, bbx2, bby2
+
+def cutmix_collate_fn(batch, num_classes):
+    images, labels = zip(*[b for b in batch if b is not None])
+    images = torch.stack(images)
+    labels = torch.tensor(labels)
+
+    lam = np.random.beta(1.0, 1.0)
+    rand_index = torch.randperm(images.size()[0])
+    target_a = labels
+    target_b = labels[rand_index]
+
+    bbx1, bby1, bbx2, bby2 = rand_bbox(images.size(), lam)
+    images[:, :, bby1:bby2, bbx1:bbx2] = images[rand_index, :, bby1:bby2, bbx1:bbx2]
+    lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (images.size(-1) * images.size(-2)))
+
+    return images, (target_a, target_b, lam)
+
+
 
 # if __name__ == '__main__':
 #     # Example usage
