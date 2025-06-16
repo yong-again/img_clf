@@ -51,7 +51,7 @@ class Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data) 
-            if isinstance(target, tuple):
+            if isinstance(target, tuple): # for cutmix labels
                 target_a, target_b, lam = target
                 adapted_target_a = adapt_target_for_loss(output, target_a, self.criterion)
                 adapted_target_b = adapt_target_for_loss(output, target_b, self.criterion)

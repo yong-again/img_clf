@@ -113,3 +113,4 @@ class CustomConvNextClassifier(nn.Module):
         # 3. 특징 추출 → 커스텀 헤드 통과
         features = self.backbone(x)
         return self.head(features)
+    
