@@ -1,0 +1,48 @@
+{
+    "name": "convnext_xgboost_cutmix",
+    "n_gpu": 1,
+  
+    "feature_model": {
+      "type": "ConvNextFeatureExtractor",
+      "args": {
+        "variant": "convnext_base",
+        "pretrained": true
+      }
+    },
+  
+    "data_loader": {
+      "type": "OnlyCutMixDataLoader",
+      "args": {
+        "data_dir": "data",
+        "csv_file": "train_mapped_3.csv",
+        "batch_size": 32,
+        "shuffle": true,
+        "validation_split": 0.1,
+        "num_workers": 4,
+        "return_onehot": false
+      }
+    },
+  
+    "ensemble_model": {
+      "type": "XGBClassifier"
+    },
+  
+    "xgb_params": {
+      "n_estimators": 200,
+      "max_depth": 6,
+      "learning_rate": 0.1,
+      "subsample": 0.9,
+      "colsample_bytree": 0.8,
+      "use_label_encoder": false,
+      "eval_metric": "mlogloss"
+    },
+  
+    "trainer": {
+      "epochs": 1,
+      "save_dir": "saved/",
+      "verbosity": 2,
+      "tensorboard": true,
+      "log_dir": "runs/convnext_xgb_cutmix"
+    }
+  }
+  

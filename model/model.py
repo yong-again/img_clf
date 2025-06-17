@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from timm import create_model
+import sys
+sys.path.append('..')
 from base import BaseModel, ResNet
 import warnings 
 warnings.filterwarnings("ignore")
@@ -113,4 +115,3 @@ class CustomConvNextClassifier(nn.Module):
         # 3. 특징 추출 → 커스텀 헤드 통과
         features = self.backbone(x)
         return self.head(features)
-    
