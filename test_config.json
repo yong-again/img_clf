@@ -15,7 +15,7 @@
     }
     },
     "data_loader": {
-        "type": "CarTestDataLoader",
+        "type": "CarTestDataLoad",
         "args":{
             "data_dir": "data",
             "batch_size": 32,
