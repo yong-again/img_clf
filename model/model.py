@@ -64,24 +64,19 @@ class VitClassifier(nn.Module):
     def forward(self, x):
         x = self.backbone(x)
         return x
-    
-import torch
-import torch.nn as nn
-from timm import create_model
-
 
 class CustomConvNextClassifier(nn.Module):
     def __init__(self, num_classes=396, **kwargs):
         super().__init__()
 
-        # 1. 백본 네트워크 초기화 (분류기 제거)
+        # 1. init backbone
         self.backbone = create_model(
             'convnext_base',
             pretrained=True,
             num_classes=0  # Feature extractor 모드
         )
 
-        # 2. 커스텀 헤드 구성
+        # 2.custom head
         in_features = 1024  # convnext_base의 출력 차원
         self.head = self._build_head_layers(
             kwargs.get('head_layers', []),

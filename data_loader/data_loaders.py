@@ -12,17 +12,6 @@ from data_loader.transform import train_transform, valid_transform, train_transf
 
 import logging
 
-# UTF-8 인코딩으로 로그 파일 핸들러 지정
-log_file_path = 'error_image_paths.log'
-file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-file_handler.setFormatter(formatter)
-
-logger = logging.getLogger('image_error_logger')
-logger.setLevel(logging.ERROR)
-logger.addHandler(file_handler)
-logger.propagate = False  # 루트 로거로 전달 방지
-
 class CarImageDataset(Dataset):
     """
     Car Image Classification dataset
