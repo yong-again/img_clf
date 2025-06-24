@@ -34,7 +34,8 @@ img_clf/
 │   └── base_trainer.py
 │
 ├── data_loader/
-│   └── data_loaders.py
+│   ├── data_loaders.py
+│   └── transform.py
 │
 ├── data/ - default directory for storing input data
 │
